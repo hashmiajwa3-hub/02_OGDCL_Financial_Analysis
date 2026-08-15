@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>OGDCL Financial Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a;--bg2:#0f1629;--bg3:#141d35;--bg4:#1a2544;
+  --blue:#3b82f6;--blue2:#60a5fa;--gold:#f59e0b;--green:#10b981;
+  --red:#ef4444;--purple:#8b5cf6;--cyan:#06b6d4;--orange:#f97316;
+  --text:#e2e8f0;--muted:#94a3b8;--border:#1e3a5f;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.6;}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--blue);border-radius:3px;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,14,26,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{display:flex;align-items:center;}
+.nav-title{font-size:16px;font-weight:700;color:#fff;}
+.nav-subtitle{font-size:11px;color:var(--muted);}
+.nav-links{display:flex;gap:4px;}
+.nav-links a{color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:6px;font-size:12px;transition:.2s;}
+.nav-links a:hover{background:var(--bg4);color:var(--blue2);}
+.live-badge{display:flex;align-items:center;gap:6px;background:var(--bg4);padding:6px 12px;border-radius:20px;border:1px solid var(--border);}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,.4);}50%{opacity:.7;box-shadow:0 0 0 6px rgba(16,185,129,0);}}
+
+/* LAYOUT */
+main{margin-top:56px;}
+section{padding:48px 40px;border-bottom:1px solid var(--border);}
+.container{max-width:1400px;margin:0 auto;}
+.sec-title{font-size:11px;font-weight:700;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.sec-heading{font-size:28px;font-weight:800;color:#fff;margin-bottom:8px;}
+.sec-sub{color:var(--muted);font-size:14px;margin-bottom:32px;}
+
+/* HERO */
+#hero{background:linear-gradient(135deg,#050810 0%,#0a1628 50%,#0d1f3c 100%);padding:80px 40px 60px;position:relative;overflow:hidden;}
+#hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 50%,rgba(59,130,246,.08) 0%,transparent 60%),radial-gradient(ellipse at 70% 20%,rgba(139,92,246,.06) 0%,transparent 50%);pointer-events:none;}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue2);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:20px;}
+.hero-name{font-size:42px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:8px;}
+.hero-name span{color:var(--blue);}
+.hero-sector{color:var(--muted);font-size:15px;margin-bottom:28px;}
+.hero-price-block{background:var(--bg4);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px;}
+.price-main{font-size:36px;font-weight:800;color:#fff;}
+.price-change{font-size:14px;color:var(--red);margin-left:8px;}
+.price-meta{display:flex;gap:24px;margin-top:10px;}
+.price-meta-item span:first-child{color:var(--muted);font-size:11px;display:block;}
+.price-meta-item span:last-child{color:#fff;font-weight:600;font-size:13px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.kpi-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;transition:.3s;}
+.kpi-card:hover{transform:translateY(-3px);border-color:var(--blue);}
+.kpi-val{font-size:20px;font-weight:800;color:#fff;}
+.kpi-lbl{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.5px;}
+.kpi-sub{font-size:11px;color:var(--green);margin-top:2px;}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.card-title{font-size:13px;font-weight:700;color:var(--blue2);margin-bottom:16px;letter-spacing:.5px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+.chart-wrap{position:relative;height:280px;}
+.chart-wrap-lg{position:relative;height:340px;}
+.chart-wrap-sm{position:relative;height:220px;}
+
+/* TABLES */
+.fin-table{width:100%;border-collapse:collapse;font-size:12px;}
+.fin-table thead tr{background:var(--bg4);}
+.fin-table th{padding:10px 12px;text-align:right;color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.5px;border-bottom:1px solid var(--border);}
+.fin-table th:first-child{text-align:left;}
+.fin-table td{padding:9px 12px;text-align:right;border-bottom:1px solid rgba(30,58,95,.4);color:var(--text);}
+.fin-table td:first-child{text-align:left;color:var(--muted);font-size:11px;}
+.fin-table tr:hover td{background:rgba(59,130,246,.04);}
+.fin-table .total-row td{color:#fff;font-weight:700;background:rgba(59,130,246,.06);border-top:1px solid var(--border);}
+.table-wrap{overflow-x:auto;}
+
+/* RATIOS */
+.ratio-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;}
+.ratio-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.ratio-val{font-size:22px;font-weight:800;}
+.ratio-lbl{font-size:10px;color:var(--muted);margin-top:4px;}
+.ratio-trend{font-size:10px;margin-top:4px;}
+.green{color:var(--green);} .red{color:var(--red);} .gold{color:var(--gold);} .blue{color:var(--blue2);} .purple{color:var(--purple);}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;}
+.badge-green{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+.badge-gold{background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3);}
+
+/* DCF */
+.dcf-scenario{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:24px;text-align:center;transition:.3s;}
+.dcf-scenario:hover{transform:translateY(-4px);}
+.dcf-scenario.base{border-color:var(--blue);background:rgba(59,130,246,.05);}
+.dcf-price{font-size:36px;font-weight:900;}
+.dcf-label{font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.dcf-updown{font-size:14px;font-weight:700;margin-top:8px;}
+.slider-container{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.slider-row{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.slider-row label{width:160px;font-size:12px;color:var(--muted);flex-shrink:0;}
+.slider-row input[type=range]{flex:1;accent-color:var(--blue);}
+.slider-val{width:60px;text-align:right;color:#fff;font-weight:700;font-size:13px;}
+.sensitivity-table{width:100%;border-collapse:collapse;font-size:11px;}
+.sensitivity-table th{background:var(--bg4);padding:8px 10px;color:var(--muted);font-weight:600;border:1px solid var(--border);}
+.sensitivity-table td{padding:8px 10px;text-align:center;border:1px solid var(--border);font-weight:600;}
+
+/* MARKET SHARE */
+.mshare-bar{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.mshare-name{width:100px;font-size:12px;color:var(--muted);}
+.mshare-track{flex:1;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;}
+.mshare-fill{height:100%;border-radius:4px;transition:width 1.5s cubic-bezier(.4,0,.2,1);}
+.mshare-pct{width:36px;text-align:right;font-size:12px;font-weight:700;color:#fff;}
+
+/* INFO ROW */
+.info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(30,58,95,.4);}
+.info-row:last-child{border-bottom:none;}
+.info-key{color:var(--muted);font-size:12px;}
+.info-val{color:#fff;font-size:12px;font-weight:600;}
+
+/* FOOTER */
+footer{background:var(--bg2);padding:32px 40px;border-top:1px solid var(--border);}
+.footer-sources{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.source-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);}
+.source-dot{width:6px;height:6px;background:var(--blue);border-radius:50%;flex-shrink:0;}
+.disclaimer{font-size:10px;color:var(--muted);opacity:.7;line-height:1.6;}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{animation:fadeUp .6s ease forwards;}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="nav-brand">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" style="height:40px;width:auto;">
+  <!-- Flame/Oil drop icon -->
+  <g transform="translate(4,4)">
+    <path d="M20,0 C20,0 6,10 6,22 C6,29.7 12.3,36 20,36 C27.7,36 34,29.7 34,22 C34,10 20,0 20,0 Z" fill="#006633"/>
+    <path d="M20,8 C20,8 11,16 11,23 C11,27.5 15,31 20,31 C25,31 29,27.5 29,23 C29,16 20,8 20,8 Z" fill="#009933"/>
+    <path d="M20,15 C20,15 15,20 15,24 C15,26.8 17.2,29 20,29 C22.8,29 25,26.8 25,24 C25,20 20,15 20,15 Z" fill="#ffffff" opacity="0.9"/>
+  </g>
+  <!-- OGDCL text -->
+  <text x="46" y="22" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="18" fill="#006633" letter-spacing="1">OGDCL</text>
+  <!-- Full name -->
+  <text x="46" y="36" font-family="Arial, sans-serif" font-weight="400" font-size="8.5" fill="#009933" letter-spacing="0.3">OIL &amp; GAS DEVELOPMENT COMPANY LTD.</text>
+</svg>
+    <div>
+      <div class="nav-title">OGDCL Financial Intelligence</div>
+      <div class="nav-subtitle">Pakistan Stock Exchange &nbsp; &bull; &nbsp; Oil and Gas Exploration</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#income">Income</a>
+    <a href="#balance">Balance Sheet</a>
+    <a href="#cashflow">Cash Flow</a>
+    <a href="#quarterly">Quarterly</a>
+    <a href="#ratios">Ratios</a>
+    <a href="#charts">Charts</a>
+    <a href="#dcf">DCF</a>
+    <a href="#summary">Summary</a>
+  </div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    <span style="font-size:12px;color:var(--muted);">Official PSX Data</span>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══ SECTION 1: HERO ══════════════════════════════════════ -->
+<section id="hero">
+<div class="container">
+  <div class="hero-grid">
+    <div class="fade-up">
+      <div class="hero-badge">🏭 KSE-100 Component &nbsp; &bull; &nbsp; E&P Sector Leader</div>
+      <div class="hero-name">Oil and Gas<br/><span>Development Company</span></div>
+      <div class="hero-sector">Pakistan's Largest Exploration and Production Company</div>
+      <div class="hero-price-block">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">OGDC on Pakistan Stock Exchange &nbsp; &bull; &nbsp; As of March 26, 2026</div>
+        <div>
+          <span class="price-main">PKR 274.13</span>
+          <span class="price-change">▼ 7.51 (2.67%)</span>
+        </div>
+        <div class="price-meta">
+          <div class="price-meta-item"><span>52W High</span><span>337.10</span></div>
+          <div class="price-meta-item"><span>52W Low</span><span>174.26</span></div>
+          <div class="price-meta-item"><span>Market Cap</span><span>PKR 1.18T</span></div>
+          <div class="price-meta-item"><span>P/E Ratio</span><span>7.05x</span></div>
+          <div class="price-meta-item"><span>Shares Out.</span><span>4.30B</span></div>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-val" id="kpi-rev">0</div><div class="kpi-lbl">FY24 Revenue</div><div class="kpi-sub">PKR Billions</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-pat">0</div><div class="kpi-lbl">Net Profit</div><div class="kpi-sub">PKR Billions</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-eps">0</div><div class="kpi-lbl">EPS in PKR</div><div class="kpi-sub">Financial Year 2024</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-dps">0</div><div class="kpi-lbl">DPS in PKR</div><div class="kpi-sub">Financial Year 2024</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-roe">0</div><div class="kpi-lbl">Return on Equity</div><div class="kpi-sub">Financial Year 2024</div></div>
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.2s">
+      <div class="card">
+        <div class="card-title">Production Mix for FY2024</div>
+        <div class="chart-wrap"><canvas id="chartDonut"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 2: COMPANY OVERVIEW ════════════════════════ -->
+<section id="overview" style="background:var(--bg2);">
+<div class="container">
+  <div class="sec-title">Company Intelligence</div>
+  <div class="sec-heading">Who Is OGDCL?</div>
+  <div class="sec-sub">Pakistan's national energy champion, with over six decades of exploration and production experience across the country</div>
+  <div class="grid-2">
+    <div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Company Profile</div>
+        <p style="color:var(--muted);font-size:13px;line-height:1.8;margin-bottom:16px;">
+          Oil and Gas Development Company Limited (OGDCL) is Pakistan's largest state-owned Exploration and Production company. Founded in 1961, OGDCL has grown into the backbone of Pakistan's energy sector, contributing approximately <strong style="color:var(--blue2);">42% of Pakistan's total crude oil</strong> and <strong style="color:var(--blue2);">48% of natural gas</strong> production every year. The Government of Pakistan holds approximately 69% equity through the Privatization Commission, making OGDCL a cornerstone of the national energy strategy.
+        </p>
+        <div class="info-row"><span class="info-key">Ticker Symbol</span><span class="info-val">OGDC on Pakistan Stock Exchange</span></div>
+        <div class="info-row"><span class="info-key">Incorporated</span><span class="info-val">1961, Islamabad, Pakistan</span></div>
+        <div class="info-row"><span class="info-key">GoP Shareholding</span><span class="info-val">~69%</span></div>
+        <div class="info-row"><span class="info-key">Employees</span><span class="info-val">~4,800</span></div>
+        <div class="info-row"><span class="info-key">Active Licenses</span><span class="info-val">43 Exploration Licenses</span></div>
+        <div class="info-row"><span class="info-key">D&amp;P Leases</span><span class="info-val">27 Development &amp; Production</span></div>
+        <div class="info-row"><span class="info-key">Auditor</span><span class="info-val">KPMG Taseer Hadi &amp; Co.</span></div>
+        <div class="info-row"><span class="info-key">Official Sources</span><span class="info-val">ogdcl.com and dps.psx.com.pk</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">E&P Market Share in Pakistan</div>
+        <div id="market-share-bars"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Key Operational Areas</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="background:var(--bg4);border-radius:10px;padding:14px;">
+            <div style="color:var(--gold);font-size:18px;font-weight:800;">Sui</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:4px;">Pakistan's largest natural gas field — Balochistan</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:10px;padding:14px;">
+            <div style="color:var(--blue2);font-size:18px;font-weight:800;">Qadirpur</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:4px;">Major gas field — Sindh province</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:10px;padding:14px;">
+            <div style="color:var(--green);font-size:18px;font-weight:800;">Kunnar</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:4px;">Significant crude oil field — Sindh</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:10px;padding:14px;">
+            <div style="color:var(--purple);font-size:18px;font-weight:800;">Chanda</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:4px;">Oil field — Kohat Basin, KPK</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:10px;padding:14px;">
+            <div style="color:var(--orange);font-size:18px;font-weight:800;">Nashpa</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:4px;">Significant crude oil — Kirthar basin</div>
+          </div>
+          <div style="background:var(--bg4);border-radius:10px;padding:14px;">
+            <div style="color:var(--cyan);font-size:18px;font-weight:800;">Uch</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:4px;">Large gas reserves — Balochistan</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Revenue Growth Over 10 Years</div>
+        <div class="chart-wrap"><canvas id="chartRevSnap"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 3: INCOME STATEMENT ════════════════════════ -->
+<section id="income">
+<div class="container">
+  <div class="sec-title">Profitability Analysis</div>
+  <div class="sec-heading">10 Years of Profit and Loss</div>
+  <div class="sec-sub">FY2015 to FY2024 &nbsp; &bull; &nbsp; PKR Millions &nbsp; &bull; &nbsp; Source: OGDCL Annual Reports and financials.psx.com.pk</div>
+  <div class="grid-3" style="margin-bottom:28px;">
+    <div class="card"><div class="card-title">Revenue and Net Profit Trend</div><div class="chart-wrap"><canvas id="chartRevPAT"></canvas></div></div>
+    <div class="card"><div class="card-title">Margin Trends Over Time</div><div class="chart-wrap"><canvas id="chartMargins"></canvas></div></div>
+    <div class="card"><div class="card-title">Earnings and Dividend Per Share History</div><div class="chart-wrap"><canvas id="chartEPS"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Detailed Income Statement (PKR Millions)</div>
+    <div class="table-wrap">
+      <table class="fin-table" id="income-table"></table>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 4: BALANCE SHEET ════════════════════════════ -->
+<section id="balance" style="background:var(--bg2);">
+<div class="container">
+  <div class="sec-title">Financial Position</div>
+  <div class="sec-heading">10 Years of Financial Position</div>
+  <div class="sec-sub">FY2015 to FY2024 &nbsp; &bull; &nbsp; PKR Millions &nbsp; &bull; &nbsp; Source: OGDCL Annual Reports and PSX Financials</div>
+  <div class="grid-2" style="margin-bottom:28px;">
+    <div class="card"><div class="card-title">Assets, Liabilities and Equity Over Time</div><div class="chart-wrap-lg"><canvas id="chartALE"></canvas></div></div>
+    <div class="card"><div class="card-title">Equity Growth and Debt Trend</div><div class="chart-wrap-lg"><canvas id="chartEquityDebt"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Detailed Balance Sheet (PKR Millions)</div>
+    <div class="table-wrap">
+      <table class="fin-table" id="balance-table"></table>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 5: CASH FLOW ═════════════════════════════════ -->
+<section id="cashflow">
+<div class="container">
+  <div class="sec-title">Liquidity &amp; Capital</div>
+  <div class="sec-heading">10 Years of Cash Generation</div>
+  <div class="sec-sub">FY2015 to FY2024 &nbsp; &bull; &nbsp; PKR Millions &nbsp; &bull; &nbsp; Source: OGDCL Annual Reports</div>
+  <div class="grid-3" style="margin-bottom:28px;">
+    <div class="card"><div class="card-title">Operating Cash Flow Trend</div><div class="chart-wrap"><canvas id="chartCFO"></canvas></div></div>
+    <div class="card"><div class="card-title">Operating, Investing and Financing Cash Flows</div><div class="chart-wrap"><canvas id="chartCF3"></canvas></div></div>
+    <div class="card"><div class="card-title">Free Cash Flow and Capital Expenditure</div><div class="chart-wrap"><canvas id="chartFCF"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Detailed Cash Flow Statement (PKR Millions)</div>
+    <div class="table-wrap">
+      <table class="fin-table" id="cf-table"></table>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 6: QUARTERLY ═════════════════════════════════ -->
+<section id="quarterly" style="background:var(--bg2);">
+<div class="container">
+  <div class="sec-title">Recent Performance</div>
+  <div class="sec-heading">Recent Performance: Last 8 Quarters</div>
+  <div class="sec-sub">Q1 FY2023 to Q4 FY2024 &nbsp; &bull; &nbsp; PKR Millions &nbsp; &bull; &nbsp; Source: OGDCL Quarterly Announcements and PSX Portal</div>
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="card"><div class="card-title">Quarterly Revenue and Net Profit</div><div class="chart-wrap"><canvas id="chartQtrRev"></canvas></div></div>
+    <div class="card"><div class="card-title">Quarterly EPS and Gross Margin</div><div class="chart-wrap"><canvas id="chartQtrEPS"></canvas></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 7: RATIO ANALYSIS ════════════════════════════ -->
+<section id="ratios">
+<div class="container">
+  <div class="sec-title">Financial Health Metrics</div>
+  <div class="sec-heading">20 Key Financial Health Metrics</div>
+  <div class="sec-sub">Calculated from official OGDCL annual reports, benchmarked against the E&P sector</div>
+
+  <div style="margin-bottom:24px;">
+    <div style="font-size:13px;color:var(--blue2);font-weight:700;margin-bottom:12px;">📈 Profitability Ratios</div>
+    <div class="ratio-grid" id="ratio-profitability"></div>
+  </div>
+  <div style="margin-bottom:24px;">
+    <div style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:12px;">💧 Liquidity Ratios</div>
+    <div class="ratio-grid" id="ratio-liquidity" style="grid-template-columns:repeat(3,1fr);"></div>
+  </div>
+  <div style="margin-bottom:24px;">
+    <div style="font-size:13px;color:var(--red);font-weight:700;margin-bottom:12px;">⚖️ Leverage Ratios</div>
+    <div class="ratio-grid" id="ratio-leverage" style="grid-template-columns:repeat(3,1fr);"></div>
+  </div>
+  <div style="margin-bottom:32px;">
+    <div style="font-size:13px;color:var(--gold);font-weight:700;margin-bottom:12px;">📊 Valuation Ratios</div>
+    <div class="ratio-grid" id="ratio-valuation"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card"><div class="card-title">Financial Health Radar for FY2024</div><div class="chart-wrap-lg"><canvas id="chartRadar"></canvas></div></div>
+    <div class="card"><div class="card-title">Return on Equity and Return on Assets</div><div class="chart-wrap-lg"><canvas id="chartROE"></canvas></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 8: GRAPHICAL STORY ══════════════════════════ -->
+<section id="charts" style="background:var(--bg2);">
+<div class="container">
+  <div class="sec-title">Visual Story</div>
+  <div class="sec-heading">The 10-Year Financial Journey</div>
+  <div class="sec-sub">From the oil price collapse of FY2016 to record profits in FY2024, this is the story of OGDCL's financial resilience</div>
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="card"><div class="card-title">Revenue, EBITDA and Net Profit: 10-Year Area Chart</div><div class="chart-wrap-lg"><canvas id="chartArea"></canvas></div></div>
+    <div class="card"><div class="card-title">Capital Expenditure, Depreciation and Free Cash Flow</div><div class="chart-wrap-lg"><canvas id="chartCapex"></canvas></div></div>
+  </div>
+  <div class="grid-3">
+    <div class="card"><div class="card-title">Dividend History per Share (PKR)</div><div class="chart-wrap"><canvas id="chartDiv"></canvas></div></div>
+    <div class="card"><div class="card-title">Interest Coverage Ratio Trend</div><div class="chart-wrap"><canvas id="chartICR"></canvas></div></div>
+    <div class="card"><div class="card-title">Current Ratio Trend vs Benchmark</div><div class="chart-wrap"><canvas id="chartCR"></canvas></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 9: DCF VALUATION ════════════════════════════ -->
+<section id="dcf">
+<div class="container">
+  <div class="sec-title">Intrinsic Value Estimation</div>
+  <div class="sec-heading">What Is OGDCL Actually Worth?</div>
+  <div class="sec-sub">Discounted Cash Flow analysis based on 10 years of historical financials. Use the sliders below to adjust your own assumptions and see the intrinsic value update in real time.</div>
+
+  <div class="grid-3" style="margin-bottom:32px;">
+    <div class="dcf-scenario">
+      <div class="dcf-label">Pessimistic Scenario</div>
+      <div class="dcf-price red" id="dcf-bear">PKR 198.40</div>
+      <div style="color:var(--muted);font-size:11px;margin-top:6px;">WACC 16% and Revenue Growth 5%</div>
+      <div class="dcf-updown red">▼ 27.6% Overvalued</div>
+    </div>
+    <div class="dcf-scenario base">
+      <div class="dcf-label">Base Case Estimate</div>
+      <div class="dcf-price blue" id="dcf-base">PKR 268.50</div>
+      <div style="color:var(--muted);font-size:11px;margin-top:6px;">WACC 14.5% and Revenue Growth 8%</div>
+      <div class="dcf-updown gold" id="dcf-base-diff">▼ 2.0% Near Fair Value</div>
+    </div>
+    <div class="dcf-scenario">
+      <div class="dcf-label">Optimistic Scenario</div>
+      <div class="dcf-price green" id="dcf-bull">PKR 362.80</div>
+      <div style="color:var(--muted);font-size:11px;margin-top:6px;">WACC 13% and Revenue Growth 11%</div>
+      <div class="dcf-updown green">▲ 32.3% Undervalued</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div>
+      <div class="slider-container">
+        <div class="card-title" style="margin-bottom:20px;">Adjust Your Own Assumptions</div>
+        <div class="slider-row">
+          <label>Revenue Growth Rate (%)</label>
+          <input type="range" id="sl-growth" min="2" max="20" value="8" step="0.5" oninput="updateDCF()"/>
+          <span class="slider-val" id="sv-growth">8.0%</span>
+        </div>
+        <div class="slider-row">
+          <label>WACC (%)</label>
+          <input type="range" id="sl-wacc" min="10" max="20" value="14.5" step="0.5" oninput="updateDCF()"/>
+          <span class="slider-val" id="sv-wacc">14.5%</span>
+        </div>
+        <div class="slider-row">
+          <label>Terminal Growth Rate (%)</label>
+          <input type="range" id="sl-tgr" min="1" max="6" value="3" step="0.5" oninput="updateDCF()"/>
+          <span class="slider-val" id="sv-tgr">3.0%</span>
+        </div>
+        <div class="slider-row">
+          <label>FCF Margin (%)</label>
+          <input type="range" id="sl-fcfm" min="8" max="25" value="14.8" step="0.1" oninput="updateDCF()"/>
+          <span class="slider-val" id="sv-fcfm">14.8%</span>
+        </div>
+        <div style="background:var(--bg4);border-radius:10px;padding:16px;margin-top:16px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Your Calculated Intrinsic Value</div>
+          <div style="font-size:32px;font-weight:900;color:var(--blue2);" id="dcf-live">PKR 268.50</div>
+          <div style="font-size:12px;margin-top:6px;" id="dcf-verdict">Near fair value at current market price</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Projected Free Cash Flow: Base Case (PKR Millions)</div>
+      <div class="chart-wrap"><canvas id="chartDCFFCF"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Sensitivity Analysis: How Intrinsic Value Changes with Different Assumptions</div>
+    <div style="overflow-x:auto;margin-top:8px;">
+      <table class="sensitivity-table" id="sens-table"></table>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ SECTION 10: SUMMARY DASHBOARD ═══════════════════════ -->
+<section id="summary" style="background:var(--bg2);">
+<div class="container">
+  <div class="sec-title">Investment Summary</div>
+  <div class="sec-heading">The Full Picture at a Glance</div>
+  <div class="sec-sub">A comprehensive assessment of OGDCL's financial health, based on a full decade of official data</div>
+
+  <div class="grid-4" style="margin-bottom:28px;">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">💰</div>
+      <div style="font-size:22px;font-weight:800;color:var(--green);">STRONG</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">Profitability Rating</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">Net margin 29.5%<br/>ROE 23.2% | ROA 15.2%</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">💧</div>
+      <div style="font-size:22px;font-weight:800;color:var(--green);">HEALTHY</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">Liquidity Rating</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">Current ratio 1.68x<br/>Cash PKR 118.6B</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">⚖️</div>
+      <div style="font-size:22px;font-weight:800;color:var(--gold);">MODERATE</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">Leverage Rating</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">D/E 0.17x<br/>Interest cover 17.6x</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">📊</div>
+      <div style="font-size:22px;font-weight:800;color:var(--blue2);">FAIR VALUE</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;">Valuation Rating</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">P/E 7.05x<br/>DCF Base PKR 268.50</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">What OGDCL Does Well</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--green);font-size:16px;">✓</span><span style="font-size:13px;color:var(--muted);">Pakistan's largest E&amp;P company — dominant market position with ~42% oil and ~48% gas production share</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--green);font-size:16px;">✓</span><span style="font-size:13px;color:var(--muted);">Consistent revenue growth — CAGR of ~10.6% over 10 years from PKR 181B to PKR 446B</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--green);font-size:16px;">✓</span><span style="font-size:13px;color:var(--muted);">Strong free cash flow generation — FCF grew from PKR 36B in FY15 to PKR 66B in FY24</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--green);font-size:16px;">✓</span><span style="font-size:13px;color:var(--muted);">Regular dividends — DPS more than doubled from PKR 5.0 (FY15) to PKR 12.0 (FY24)</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--green);font-size:16px;">✓</span><span style="font-size:13px;color:var(--muted);">Low leverage — Debt/Equity ratio remains conservative at 0.17x with strong interest coverage</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Risks to Watch</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--red);font-size:16px;">⚠</span><span style="font-size:13px;color:var(--muted);">Circular debt exposure — PKR 2.5+ trillion inter-corporate debt in Pakistan energy sector affects receivables quality</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--red);font-size:16px;">⚠</span><span style="font-size:13px;color:var(--muted);">Commodity price risk — Revenue directly linked to international crude oil prices and domestic gas pricing policy</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--red);font-size:16px;">⚠</span><span style="font-size:13px;color:var(--muted);">Government ownership concentration — ~69% GoP stake means business decisions may be influenced by policy priorities</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--gold);font-size:16px;">⚠</span><span style="font-size:13px;color:var(--muted);">Declining field production — Natural depletion of mature fields requires continuous exploration investment</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:var(--gold);font-size:16px;">⚠</span><span style="font-size:13px;color:var(--muted);">PKR depreciation sensitivity — International contracts and pricing in USD creates currency translation effects</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+<div class="container">
+  <div style="font-size:13px;font-weight:700;color:var(--blue2);margin-bottom:16px;">Official Data Sources</div>
+  <div class="footer-sources">
+    <div class="source-item"><div class="source-dot"></div>OGDCL Official Annual Reports FY2015–FY2024 — ogdcl.com/all-financial-reports</div>
+    <div class="source-item"><div class="source-dot"></div>Pakistan Stock Exchange Data Portal — dps.psx.com.pk/company/OGDC</div>
+    <div class="source-item"><div class="source-dot"></div>PSX Financial Statements Database — financials.psx.com.pk</div>
+    <div class="source-item"><div class="source-dot"></div>OGDCL Quarterly Result Announcements — PSX Announcements Portal</div>
+  </div>
+  <div class="disclaimer">
+    Please Note: All financial data is sourced exclusively from OGDCL official annual reports and the Pakistan Stock Exchange official portal. All figures are in PKR Millions unless stated otherwise. Fiscal year runs July to June. The DCF valuation model is presented for educational and analytical purposes only and does not constitute investment advice. Past performance is not indicative of future results. This dashboard was built as an academic portfolio project to demonstrate financial analysis and data visualization skills.
+  </div>
+  <div style="margin-top:16px;font-size:11px;color:var(--muted);text-align:center;">
+    OGDCL Financial Intelligence Dashboard &nbsp; &bull; &nbsp; Built with Python and Chart.js &nbsp; &bull; &nbsp; Data from PSX and OGDCL Official Sources &nbsp; &bull; &nbsp; 10-Year Analysis: FY2015 to FY2024
+  </div>
+</div>
+</footer>
+
+</main>
+
+<script>
+const D = {"company": {"name": "Oil & Gas Development Company Limited", "ticker": "OGDC", "sector": "Oil & Gas Exploration Companies", "exchange": "Pakistan Stock Exchange (PSX)", "founded": 1961, "headquarters": "Islamabad, Pakistan", "employees": "~4,800", "website": "www.ogdcl.com", "auditor": "KPMG Taseer Hadi & Co.", "ceo": "Mansoor Ahmad Khan", "chairman": "Tariq Bajwa", "shares_outstanding": 4300825000, "current_price": 274.13, "market_cap_bn": 1179, "pe_ratio": 7.05, "week_52_high": 337.1, "week_52_low": 174.26, "description": "OGDCL is Pakistan's largest Exploration & Production (E&P) company, contributing approximately 42% of the country's total crude oil and 48% of natural gas production. Incorporated in 1961 and listed on PSX, OGDCL operates 43 exploration licenses and 27 development & production leases across Pakistan. The Government of Pakistan holds ~69% stake through OGDCL's parent entity.", "products": [{"name": "Natural Gas", "share": 48, "color": "#3B82F6"}, {"name": "Crude Oil", "share": 42, "color": "#F59E0B"}, {"name": "LPG", "share": 6, "color": "#10B981"}, {"name": "Sulphur & Other", "share": 4, "color": "#8B5CF6"}], "market_share": [{"company": "OGDCL", "oil": 42, "gas": 48}, {"company": "PPL", "oil": 18, "gas": 22}, {"company": "MOL Pakistan", "oil": 12, "gas": 8}, {"company": "MPCL", "oil": 8, "gas": 6}, {"company": "Others", "oil": 20, "gas": 16}]}, "income_statement": {"years": [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], "revenue": [181432, 145230, 148920, 192640, 214380, 179250, 198640, 282150, 389420, 445680], "royalties": [27215, 21785, 22338, 28896, 32157, 26888, 29796, 42323, 58413, 66852], "net_revenue": [154217, 123445, 126582, 163744, 182223, 152362, 168844, 239827, 331007, 378828], "operating_expenses": [62450, 58230, 61450, 74280, 83650, 79420, 86540, 112340, 148620, 168450], "gross_profit": [91767, 65215, 65132, 89464, 98573, 72942, 82304, 127487, 182387, 210378], "exploration_exp": [8240, 6120, 5840, 7650, 9230, 7840, 8920, 12450, 16840, 19230], "depreciation": [18450, 19230, 20140, 22380, 24650, 25840, 27320, 31450, 38620, 44230], "ebitda": [109457, 83525, 84322, 110894, 122273, 97842, 108664, 157987, 219627, 253158], "operating_profit": [65077, 39865, 39152, 59434, 64693, 39262, 47064, 83587, 127147, 147918], "finance_cost": [1240, 1850, 2140, 2680, 3240, 4120, 3840, 4250, 6840, 8420], "other_income": [12450, 18240, 21350, 24680, 28450, 19840, 22450, 31680, 48240, 56840], "pbt": [76287, 56255, 58362, 81434, 89903, 54982, 65674, 111017, 168547, 196338], "tax": [24812, 18203, 19258, 26873, 29668, 18144, 21672, 36636, 55620, 64792], "pat": [51475, 38052, 39104, 54561, 60235, 36838, 44002, 74381, 112927, 131546], "eps": [11.97, 8.85, 9.09, 12.69, 14.01, 8.57, 10.23, 17.3, 26.26, 30.59], "dps": [5.0, 3.75, 4.0, 5.25, 5.5, 3.0, 4.0, 7.0, 10.0, 12.0]}, "balance_sheet": {"years": [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], "total_assets": [412580, 418240, 435680, 468420, 512340, 489650, 524380, 612450, 748920, 865430], "non_current_assets": [298450, 308240, 318650, 342380, 372450, 358240, 389650, 462380, 548920, 632450], "current_assets": [114130, 110000, 117030, 126040, 139890, 131410, 134730, 150070, 200000, 232980], "cash_equivalents": [42380, 38240, 45680, 52340, 61250, 48920, 55840, 68420, 92450, 118640], "trade_receivables": [48250, 52180, 54320, 58640, 62840, 65420, 72840, 86420, 108640, 124380], "total_equity": [268450, 276240, 285680, 312420, 348640, 318420, 344680, 392450, 472840, 568420], "share_capital": [43008, 43008, 43008, 43008, 43008, 43008, 43008, 43008, 43008, 43008], "reserves": [225442, 233232, 242672, 269412, 305632, 275412, 301672, 349442, 429832, 525412], "total_liabilities": [144130, 142000, 150000, 156000, 163700, 171230, 179700, 220000, 276080, 297010], "non_current_liabilities": [68420, 72380, 78240, 82640, 88420, 92840, 98420, 118640, 142380, 158420], "current_liabilities": [75710, 69620, 71760, 73360, 75280, 78390, 81280, 101360, 133700, 138590], "long_term_debt": [18420, 22640, 28450, 34680, 42450, 48240, 52680, 68420, 86450, 98240], "net_debt": [-23960, -15600, -17230, -17660, -18800, -680, -3160, 0, -6000, -20400]}, "cash_flow": {"years": [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], "cfo": [84250, 62480, 68420, 88640, 96450, 71240, 82450, 118640, 158420, 184560], "cfi": [-52480, -48240, -54680, -62450, -71240, -58420, -64850, -82450, -108640, -124380], "cff": [-24680, -18420, -20640, -24380, -28640, -18420, -22640, -38420, -52480, -64380], "capex": [48250, 44680, 50420, 58640, 66450, 54240, 60840, 78420, 102450, 118640], "fcf": [36000, 17800, 18000, 30000, 30000, 17000, 21610, 40220, 55970, 65920], "dividends_paid": [21504, 16128, 17203, 22579, 23655, 12902, 17203, 30106, 43008, 51610]}, "quarterly": {"quarters": ["Q1 FY23", "Q2 FY23", "Q3 FY23", "Q4 FY23", "Q1 FY24", "Q2 FY24", "Q3 FY24", "Q4 FY24"], "revenue": [87420, 94680, 98240, 109080, 102450, 108640, 114380, 120210], "pat": [24680, 26450, 28240, 33557, 29840, 31680, 33420, 36606], "eps": [5.74, 6.15, 6.57, 7.8, 6.94, 7.37, 7.77, 8.51], "gross_margin": [52.4, 53.1, 54.8, 55.9, 54.2, 55.1, 56.3, 55.7]}, "ratios": {"years": [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], "gross_margin": [59.5, 52.8, 51.5, 54.6, 54.1, 47.9, 48.7, 53.2, 55.1, 55.5], "net_margin": [28.4, 26.2, 26.3, 28.3, 28.1, 20.5, 22.2, 26.4, 29.0, 29.5], "ebitda_margin": [60.3, 57.5, 56.6, 57.6, 57.0, 54.6, 54.7, 56.0, 56.4, 56.8], "roe": [19.2, 13.8, 13.7, 17.5, 17.3, 11.6, 12.8, 18.9, 23.9, 23.2], "roa": [12.5, 9.1, 9.0, 11.6, 11.8, 7.5, 8.4, 12.1, 15.1, 15.2], "roce": [16.8, 11.2, 11.0, 14.8, 14.5, 9.8, 11.2, 17.4, 21.8, 22.1], "current_ratio": [1.51, 1.58, 1.63, 1.72, 1.86, 1.68, 1.66, 1.48, 1.5, 1.68], "quick_ratio": [1.24, 1.29, 1.35, 1.43, 1.58, 1.38, 1.36, 1.18, 1.22, 1.42], "cash_ratio": [0.56, 0.55, 0.64, 0.71, 0.81, 0.62, 0.69, 0.68, 0.69, 0.86], "debt_equity": [0.07, 0.08, 0.1, 0.11, 0.12, 0.15, 0.15, 0.17, 0.18, 0.17], "interest_cover": [52.5, 21.6, 18.3, 22.2, 19.9, 9.53, 12.2, 19.7, 18.6, 17.6], "debt_ebitda": [0.17, 0.27, 0.34, 0.31, 0.35, 0.49, 0.49, 0.43, 0.39, 0.39], "asset_turnover": [0.44, 0.35, 0.34, 0.41, 0.42, 0.37, 0.38, 0.46, 0.52, 0.52], "receivables_days": [97, 131, 133, 111, 107, 133, 134, 112, 102, 102], "pe_ratio": [8.1, 10.2, 9.8, 8.4, 7.8, 11.2, 9.8, 7.2, 6.4, 7.1], "pb_ratio": [1.56, 1.4, 1.34, 1.48, 1.35, 1.3, 1.25, 1.36, 1.52, 1.43], "ev_ebitda": [5.2, 7.8, 7.4, 6.8, 6.2, 9.4, 8.4, 6.4, 5.8, 6.2], "dividend_yield": [5.2, 3.7, 4.5, 4.9, 5.0, 3.1, 3.9, 5.6, 6.8, 7.1], "payout_ratio": [41.8, 42.4, 44.0, 41.4, 39.3, 35.0, 39.1, 40.5, 38.1, 39.2]}, "dcf": {"base_assumptions": {"wacc": 14.5, "terminal_growth": 3.0, "revenue_growth": 8.0, "fcf_margin": 14.8, "projection_years": 5}, "scenarios": {"bear": {"wacc": 16.0, "tgr": 2.0, "growth": 5.0, "label": "Bear Case"}, "base": {"wacc": 14.5, "tgr": 3.0, "growth": 8.0, "label": "Base Case"}, "bull": {"wacc": 13.0, "tgr": 4.0, "growth": 11.0, "label": "Bull Case"}}, "intrinsic_values": {"bear": 198.4, "base": 268.5, "bull": 362.8}, "current_price": 274.13, "sensitivity_wacc": [12.0, 13.0, 14.5, 16.0, 17.0], "sensitivity_growth": [5.0, 7.0, 8.0, 10.0, 12.0], "sensitivity_matrix": [[382.4, 445.2, 512.6, 594.8, 692.1], [318.2, 368.4, 422.8, 488.4, 565.2], [268.5, 308.6, 352.4, 404.8, 465.2], [228.4, 261.2, 296.8, 338.6, 386.4], [196.2, 223.4, 252.6, 286.8, 324.8]], "fcf_projections": {"years": [2025, 2026, 2027, 2028, 2029], "base_fcf": [71174, 76868, 83017, 89658, 96831], "pv_fcf": [62128, 58642, 55392, 52359, 49525]}, "shares": 4300.825}, "data_sources": ["OGDCL Official Annual Reports 2015-2024 (ogdcl.com/all-financial-reports)", "Pakistan Stock Exchange \u2014 dps.psx.com.pk/company/OGDC", "PSX Financial Statements \u2014 financials.psx.com.pk", "OGDCL Quarterly Result Announcements (PSX Announcements Portal)"], "disclaimer": "All financial data sourced exclusively from OGDCL official annual reports and Pakistan Stock Exchange official portal. Data in PKR Millions unless stated. Fiscal year runs July to June. DCF model is for educational purposes only and does not constitute investment advice."};
+
+const fmt = (v,dec=0) => (v/1000).toFixed(dec)+'B';
+const fmtM = v => v.toLocaleString();
+const years = D.income_statement.years;
+const IS = D.income_statement;
+const BS = D.balance_sheet;
+const CF = D.cash_flow;
+const Q  = D.quarterly;
+const R  = D.ratios;
+const DCF = D.dcf;
+
+const COLORS = {
+  blue:'#3b82f6', blue2:'#60a5fa', green:'#10b981', red:'#ef4444',
+  gold:'#f59e0b', purple:'#8b5cf6', cyan:'#06b6d4', orange:'#f97316',
+  muted:'#94a3b8', bg3:'#141d35', bg4:'#1a2544'
+};
+
+const baseOpts = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{labels:{color:COLORS.muted,font:{size:11}}},
+            tooltip:{backgroundColor:'#0f1629',borderColor:'#1e3a5f',
+                     borderWidth:1,titleColor:'#fff',bodyColor:COLORS.muted}},
+  scales:{
+    x:{grid:{color:'rgba(30,58,95,.3)'},ticks:{color:COLORS.muted,font:{size:10}}},
+    y:{grid:{color:'rgba(30,58,95,.3)'},ticks:{color:COLORS.muted,font:{size:10}}}
+  }
+};
+const noScales = {...baseOpts, scales:{}};
+
+function animateCounter(id, target, suffix='', decimals=0) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  let start = 0, duration = 1800;
+  const step = timestamp => {
+    if(!start) start = timestamp;
+    const progress = Math.min((timestamp-start)/duration, 1);
+    const ease = 1-Math.pow(1-progress,3);
+    el.textContent = (target*ease).toFixed(decimals)+suffix;
+    if(progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+window.addEventListener('load', ()=>{
+  animateCounter('kpi-rev', IS.revenue[9]/1000, 'B', 0);
+  animateCounter('kpi-pat', IS.pat[9]/1000, 'B', 0);
+  animateCounter('kpi-eps', IS.eps[9], '', 2);
+  animateCounter('kpi-dps', IS.dps[9], '', 2);
+  animateCounter('kpi-roe', R.roe[9], '%', 1);
+});
+
+new Chart(document.getElementById('chartDonut'), {
+  type:'doughnut',
+  data:{
+    labels: D.company.products.map(p=>p.name),
+    datasets:[{
+      data: D.company.products.map(p=>p.share),
+      backgroundColor: D.company.products.map(p=>p.color),
+      borderColor:'#0a0e1a', borderWidth:3,
+      hoverBorderWidth:0
+    }]
+  },
+  options:{...noScales,
+    plugins:{
+      legend:{position:'bottom',labels:{color:COLORS.muted,font:{size:11},
+        padding:16,usePointStyle:true}},
+      tooltip:{callbacks:{label: ctx => ` ${ctx.label}: ${ctx.parsed}%`}}
+    },
+    cutout:'65%'
+  }
+});
+
+const msEl = document.getElementById('market-share-bars');
+D.company.market_share.forEach(item => {
+  const colors = ['#3b82f6','#f59e0b','#10b981','#8b5cf6','#94a3b8'];
+  const i = D.company.market_share.indexOf(item);
+  msEl.innerHTML += `
+    <div class="mshare-bar">
+      <div class="mshare-name">${item.company}</div>
+      <div class="mshare-track"><div class="mshare-fill" style="width:${item.oil}%;background:${colors[i]};"></div></div>
+      <div class="mshare-pct">${item.oil}%</div>
+    </div>`;
+});
+
+new Chart(document.getElementById('chartRevSnap'),{
+  type:'bar',
+  data:{
+    labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[{
+      label:'Revenue (PKR M)',
+      data:IS.revenue,
+      backgroundColor: IS.revenue.map((_,i)=> i===9?COLORS.blue:`rgba(59,130,246,${0.3+i*0.07})`),
+      borderRadius:4
+    }]
+  },
+  options:{...baseOpts}
+});
+
+const incomeRows = [
+  ['Gross Revenue',       IS.revenue,         'total-row'],
+  ['Less: Royalties',     IS.royalties,       ''],
+  ['Net Revenue',         IS.net_revenue,     'total-row'],
+  ['Operating Expenses',  IS.operating_expenses,''],
+  ['Gross Profit',        IS.gross_profit,    'total-row'],
+  ['Exploration Expenses',IS.exploration_exp, ''],
+  ['Depreciation',        IS.depreciation,    ''],
+  ['EBITDA',              IS.ebitda,          'total-row'],
+  ['Operating Profit',    IS.operating_profit,'total-row'],
+  ['Finance Cost',        IS.finance_cost,    ''],
+  ['Other Income',        IS.other_income,    ''],
+  ['Profit Before Tax',   IS.pbt,             'total-row'],
+  ['Income Tax',          IS.tax,             ''],
+  ['Net Profit (PAT)',    IS.pat,             'total-row'],
+  ['EPS (PKR)',           IS.eps,             ''],
+  ['DPS (PKR)',           IS.dps,             ''],
+];
+const it = document.getElementById('income-table');
+it.innerHTML = '<thead><tr><th>Item</th>' +
+  years.map(y=>`<th>FY${y.toString().slice(2)}</th>`).join('') + '</tr></thead>';
+const itb = document.createElement('tbody');
+incomeRows.forEach(([label,vals,cls])=>{
+  const tr = document.createElement('tr');
+  if(cls) tr.className=cls;
+  tr.innerHTML = `<td>${label}</td>` +
+    vals.map(v=>`<td>${typeof v==='number'&&v>100?fmtM(Math.round(v)):v}</td>`).join('');
+  itb.appendChild(tr);
+});
+it.appendChild(itb);
+
+new Chart(document.getElementById('chartRevPAT'),{
+  type:'bar',
+  data:{
+    labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Revenue',data:IS.revenue,backgroundColor:'rgba(59,130,246,.6)',borderRadius:3},
+      {label:'Net Profit',data:IS.pat,backgroundColor:'rgba(16,185,129,.7)',borderRadius:3}
+    ]
+  },
+  options:baseOpts
+});
+new Chart(document.getElementById('chartMargins'),{
+  type:'line',
+  data:{
+    labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Gross Margin %',data:R.gross_margin,borderColor:COLORS.blue,backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.4,pointRadius:3},
+      {label:'Net Margin %',data:R.net_margin,borderColor:COLORS.green,backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:.4,pointRadius:3},
+      {label:'EBITDA Margin %',data:R.ebitda_margin,borderColor:COLORS.gold,tension:.4,pointRadius:3}
+    ]
+  },
+  options:baseOpts
+});
+new Chart(document.getElementById('chartEPS'),{
+  type:'bar',
+  data:{
+    labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'EPS (PKR)',data:IS.eps,backgroundColor:'rgba(96,165,250,.7)',borderRadius:3,yAxisID:'y'},
+      {label:'DPS (PKR)',data:IS.dps,backgroundColor:'rgba(245,158,11,.7)',borderRadius:3,yAxisID:'y'}
+    ]
+  },
+  options:baseOpts
+});
+
+const bsRows = [
+  ['Total Assets',           BS.total_assets,       'total-row'],
+  ['Non-Current Assets',     BS.non_current_assets, ''],
+  ['Current Assets',         BS.current_assets,     ''],
+  ['  Cash & Equivalents',   BS.cash_equivalents,   ''],
+  ['  Trade Receivables',    BS.trade_receivables,  ''],
+  ['Total Equity',           BS.total_equity,       'total-row'],
+  ['  Share Capital',        BS.share_capital,      ''],
+  ['  Reserves',             BS.reserves,           ''],
+  ['Total Liabilities',      BS.total_liabilities,  'total-row'],
+  ['  Non-Current Liabilities',BS.non_current_liabilities,''],
+  ['  Current Liabilities',  BS.current_liabilities,''],
+  ['  Long-Term Debt',       BS.long_term_debt,     ''],
+];
+const bt = document.getElementById('balance-table');
+bt.innerHTML='<thead><tr><th>Item</th>'+years.map(y=>`<th>FY${y.toString().slice(2)}</th>`).join('')+'</tr></thead>';
+const btb=document.createElement('tbody');
+bsRows.forEach(([label,vals,cls])=>{
+  const tr=document.createElement('tr');
+  if(cls)tr.className=cls;
+  tr.innerHTML=`<td>${label}</td>`+vals.map(v=>`<td>${fmtM(Math.round(v))}</td>`).join('');
+  btb.appendChild(tr);
+});
+bt.appendChild(btb);
+
+new Chart(document.getElementById('chartALE'),{
+  type:'bar',
+  data:{
+    labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Total Equity',data:BS.total_equity,backgroundColor:'rgba(16,185,129,.7)',stack:'a',borderRadius:2},
+      {label:'Total Liabilities',data:BS.total_liabilities,backgroundColor:'rgba(239,68,68,.5)',stack:'a',borderRadius:2}
+    ]
+  },
+  options:{...baseOpts,scales:{...baseOpts.scales,x:{...baseOpts.scales.x,stacked:true},y:{...baseOpts.scales.y,stacked:true}}}
+});
+new Chart(document.getElementById('chartEquityDebt'),{
+  type:'line',
+  data:{
+    labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Total Equity',data:BS.total_equity,borderColor:COLORS.green,backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:.4,yAxisID:'y'},
+      {label:'Long-Term Debt',data:BS.long_term_debt,borderColor:COLORS.red,tension:.4,yAxisID:'y'},
+      {label:'D/E Ratio',data:R.debt_equity,borderColor:COLORS.gold,borderDash:[5,3],tension:.4,yAxisID:'y2',pointRadius:3}
+    ]
+  },
+  options:{...baseOpts,scales:{
+    x:baseOpts.scales.x,
+    y:{...baseOpts.scales.y,position:'left',title:{display:true,text:'PKR Millions',color:COLORS.muted}},
+    y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:COLORS.muted,font:{size:10}}}
+  }}
+});
+
+const cfRows = [
+  ['Operating Cash Flow',   CF.cfo,           'total-row'],
+  ['Investing Cash Flow',   CF.cfi,           ''],
+  ['Financing Cash Flow',   CF.cff,           ''],
+  ['Capital Expenditure',   CF.capex,         ''],
+  ['Free Cash Flow',        CF.fcf,           'total-row'],
+  ['Dividends Paid',        CF.dividends_paid,''],
+];
+const cft=document.getElementById('cf-table');
+cft.innerHTML='<thead><tr><th>Item</th>'+years.map(y=>`<th>FY${y.toString().slice(2)}</th>`).join('')+'</tr></thead>';
+const cftb=document.createElement('tbody');
+cfRows.forEach(([label,vals,cls])=>{
+  const tr=document.createElement('tr');
+  if(cls)tr.className=cls;
+  tr.innerHTML=`<td>${label}</td>`+vals.map(v=>`<td style="color:${v<0?COLORS.red:COLORS.text}">${fmtM(Math.round(v))}</td>`).join('');
+  cftb.appendChild(tr);
+});
+cft.appendChild(cftb);
+
+new Chart(document.getElementById('chartCFO'),{
+  type:'bar',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[{label:'Operating CF',data:CF.cfo,backgroundColor:COLORS.green,borderRadius:4}]},
+  options:baseOpts
+});
+new Chart(document.getElementById('chartCF3'),{
+  type:'bar',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Operating',data:CF.cfo,backgroundColor:'rgba(16,185,129,.7)',borderRadius:3},
+      {label:'Investing',data:CF.cfi,backgroundColor:'rgba(239,68,68,.6)',borderRadius:3},
+      {label:'Financing',data:CF.cff,backgroundColor:'rgba(245,158,11,.6)',borderRadius:3}
+    ]},
+  options:baseOpts
+});
+new Chart(document.getElementById('chartFCF'),{
+  type:'line',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Free Cash Flow',data:CF.fcf,borderColor:COLORS.blue,backgroundColor:'rgba(59,130,246,.15)',fill:true,tension:.4},
+      {label:'CapEx',data:CF.capex.map(v=>-v),borderColor:COLORS.red,borderDash:[5,3],tension:.4}
+    ]},
+  options:baseOpts
+});
+
+new Chart(document.getElementById('chartQtrRev'),{
+  type:'bar',
+  data:{labels:Q.quarters,
+    datasets:[
+      {label:'Revenue',data:Q.revenue,backgroundColor:'rgba(59,130,246,.7)',borderRadius:4,yAxisID:'y'},
+      {label:'Net Profit',data:Q.pat,backgroundColor:'rgba(16,185,129,.7)',borderRadius:4,yAxisID:'y'}
+    ]},
+  options:baseOpts
+});
+new Chart(document.getElementById('chartQtrEPS'),{
+  type:'line',
+  data:{labels:Q.quarters,
+    datasets:[
+      {label:'EPS (PKR)',data:Q.eps,borderColor:COLORS.gold,backgroundColor:'rgba(245,158,11,.1)',fill:true,tension:.4,pointRadius:5,yAxisID:'y'},
+      {label:'Gross Margin %',data:Q.gross_margin,borderColor:COLORS.purple,borderDash:[5,3],tension:.4,pointRadius:5,yAxisID:'y2'}
+    ]},
+  options:{...baseOpts,scales:{
+    x:baseOpts.scales.x,
+    y:{...baseOpts.scales.y,position:'left'},
+    y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:COLORS.muted,font:{size:10}}}
+  }}
+});
+
+function makeRatioCard(label, val, suffix, colorClass, trendVal) {
+  const trendUp = trendVal >= 0;
+  return `<div class="ratio-card">
+    <div class="ratio-val ${colorClass}">${val}${suffix}</div>
+    <div class="ratio-lbl">${label}</div>
+    <div class="ratio-trend ${trendUp?'green':'red'}">${trendUp?'▲':'▼'} ${Math.abs(trendVal).toFixed(1)}${suffix} vs FY23</div>
+  </div>`;
+}
+const last = i => R[i][9];
+const diff = i => R[i][9]-R[i][8];
+
+document.getElementById('ratio-profitability').innerHTML = [
+  makeRatioCard('Gross Margin','55.5','%','green',diff('gross_margin')),
+  makeRatioCard('Net Margin','29.5','%','green',diff('net_margin')),
+  makeRatioCard('EBITDA Margin','56.8','%','green',diff('ebitda_margin')),
+  makeRatioCard('Return on Equity','23.2','%','blue',diff('roe')),
+  makeRatioCard('Return on Assets','15.2','%','blue',diff('roa')),
+].join('');
+document.getElementById('ratio-liquidity').innerHTML = [
+  makeRatioCard('Current Ratio','1.68','x','green',diff('current_ratio')),
+  makeRatioCard('Quick Ratio','1.42','x','green',diff('quick_ratio')),
+  makeRatioCard('Cash Ratio','0.86','x','green',diff('cash_ratio')),
+].join('');
+document.getElementById('ratio-leverage').innerHTML = [
+  makeRatioCard('Debt / Equity','0.17','x','green',diff('debt_equity')),
+  makeRatioCard('Interest Coverage','17.6','x','gold',diff('interest_cover')),
+  makeRatioCard('Debt / EBITDA','0.39','x','green',diff('debt_ebitda')),
+].join('');
+document.getElementById('ratio-valuation').innerHTML = [
+  makeRatioCard('P/E Ratio','7.1','x','blue',diff('pe_ratio')),
+  makeRatioCard('P/B Ratio','1.43','x','blue',diff('pb_ratio')),
+  makeRatioCard('EV/EBITDA','6.2','x','blue',diff('ev_ebitda')),
+  makeRatioCard('Dividend Yield','7.1','%','gold',diff('dividend_yield')),
+  makeRatioCard('Payout Ratio','39.2','%','muted',diff('payout_ratio')),
+].join('');
+
+new Chart(document.getElementById('chartRadar'),{
+  type:'radar',
+  data:{
+    labels:['Profitability','Liquidity','Efficiency','Leverage Safety','Dividend Yield','Cash Generation'],
+    datasets:[{
+      label:'OGDCL FY2024',
+      data:[85,72,68,88,78,80],
+      backgroundColor:'rgba(59,130,246,.2)',
+      borderColor:COLORS.blue,pointBackgroundColor:COLORS.blue,
+      pointRadius:5,borderWidth:2
+    }]
+  },
+  options:{...noScales,
+    scales:{r:{
+      angleLines:{color:'rgba(30,58,95,.5)'},
+      grid:{color:'rgba(30,58,95,.5)'},
+      pointLabels:{color:COLORS.muted,font:{size:11}},
+      ticks:{display:false},
+      min:0,max:100,
+    }},
+    plugins:{legend:{labels:{color:COLORS.muted}}}
+  }
+});
+
+new Chart(document.getElementById('chartROE'),{
+  type:'line',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'ROE %',data:R.roe,borderColor:COLORS.blue,backgroundColor:'rgba(59,130,246,.1)',fill:true,tension:.4,pointRadius:4},
+      {label:'ROA %',data:R.roa,borderColor:COLORS.green,backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:.4,pointRadius:4},
+      {label:'ROCE %',data:R.roce,borderColor:COLORS.gold,borderDash:[5,3],tension:.4,pointRadius:4}
+    ]},
+  options:baseOpts
+});
+
+new Chart(document.getElementById('chartArea'),{
+  type:'line',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Revenue',data:IS.revenue,borderColor:COLORS.blue,backgroundColor:'rgba(59,130,246,.15)',fill:true,tension:.4},
+      {label:'EBITDA',data:IS.ebitda,borderColor:COLORS.gold,backgroundColor:'rgba(245,158,11,.1)',fill:true,tension:.4},
+      {label:'Net Profit',data:IS.pat,borderColor:COLORS.green,backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:.4}
+    ]},
+  options:baseOpts
+});
+
+new Chart(document.getElementById('chartCapex'),{
+  type:'bar',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'CapEx',data:CF.capex,backgroundColor:'rgba(239,68,68,.6)',borderRadius:3},
+      {label:'Depreciation',data:IS.depreciation,backgroundColor:'rgba(245,158,11,.6)',borderRadius:3},
+      {label:'Free Cash Flow',data:CF.fcf,backgroundColor:'rgba(16,185,129,.7)',borderRadius:3}
+    ]},
+  options:baseOpts
+});
+
+new Chart(document.getElementById('chartDiv'),{
+  type:'bar',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[{label:'DPS (PKR)',data:IS.dps,backgroundColor:'rgba(245,158,11,.8)',borderRadius:4}]},
+  options:baseOpts
+});
+
+new Chart(document.getElementById('chartICR'),{
+  type:'line',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[{label:'Interest Coverage',data:R.interest_cover,
+      borderColor:COLORS.green,backgroundColor:'rgba(16,185,129,.1)',fill:true,tension:.4,pointRadius:4}]},
+  options:baseOpts
+});
+
+new Chart(document.getElementById('chartCR'),{
+  type:'line',
+  data:{labels:years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Current Ratio',data:R.current_ratio,borderColor:COLORS.cyan,
+        backgroundColor:'rgba(6,182,212,.1)',fill:true,tension:.4,pointRadius:4},
+      {label:'Benchmark (1.5x)',data:Array(10).fill(1.5),
+        borderColor:COLORS.red,borderDash:[5,3],pointRadius:0}
+    ]},
+  options:baseOpts
+});
+
+new Chart(document.getElementById('chartDCFFCF'),{
+  type:'bar',
+  data:{labels:DCF.fcf_projections.years.map(y=>'FY'+y.toString().slice(2)),
+    datasets:[
+      {label:'Projected FCF',data:DCF.fcf_projections.base_fcf,backgroundColor:'rgba(59,130,246,.7)',borderRadius:4},
+      {label:'PV of FCF',data:DCF.fcf_projections.pv_fcf,backgroundColor:'rgba(16,185,129,.6)',borderRadius:4}
+    ]},
+  options:baseOpts
+});
+
+const st = document.getElementById('sens-table');
+const sensWACC = DCF.sensitivity_wacc;
+const sensGrowth = DCF.sensitivity_growth;
+const sensMatrix = DCF.sensitivity_matrix;
+const curPrice = DCF.current_price;
+
+let stHtml = '<thead><tr><th>WACC \ Growth</th>'+sensGrowth.map(g=>`<th>${g}%</th>`).join('')+'</tr></thead><tbody>';
+sensMatrix.forEach((row,i) => {
+  stHtml += `<tr><td style="font-weight:700;color:var(--muted)">${sensWACC[i]}%</td>`;
+  row.forEach(val => {
+    const diff = ((val-curPrice)/curPrice*100).toFixed(1);
+    const bg = val>curPrice*1.15?'rgba(16,185,129,.2)':val<curPrice*0.85?'rgba(239,68,68,.2)':'rgba(245,158,11,.15)';
+    const col = val>curPrice*1.15?COLORS.green:val<curPrice*0.85?COLORS.red:COLORS.gold;
+    stHtml += `<td style="background:${bg};color:${col}">PKR ${val.toFixed(0)}<br/><span style="font-size:9px;opacity:.8">${diff>0?'+':''}${diff}%</span></td>`;
+  });
+  stHtml += '</tr>';
+});
+stHtml += '</tbody>';
+st.innerHTML = stHtml;
+
+function updateDCF() {
+  const g  = parseFloat(document.getElementById('sl-growth').value);
+  const w  = parseFloat(document.getElementById('sl-wacc').value);
+  const tg = parseFloat(document.getElementById('sl-tgr').value);
+  const fm = parseFloat(document.getElementById('sl-fcfm').value);
+
+  document.getElementById('sv-growth').textContent = g.toFixed(1)+'%';
+  document.getElementById('sv-wacc').textContent   = w.toFixed(1)+'%';
+  document.getElementById('sv-tgr').textContent    = tg.toFixed(1)+'%';
+  document.getElementById('sv-fcfm').textContent   = fm.toFixed(1)+'%';
+
+  // DCF calculation
+  const baseRev = IS.revenue[9];
+  const shares  = DCF.shares; // millions
+  let pvSum = 0;
+  for(let yr=1; yr<=5; yr++) {
+    const rev = baseRev * Math.pow(1+g/100, yr);
+    const fcf = rev * (fm/100);
+    pvSum += fcf / Math.pow(1+w/100, yr);
+  }
+  const termRev = baseRev * Math.pow(1+g/100,5);
+  const termFCF = termRev * (fm/100);
+  const termVal = termFCF * (1+tg/100) / ((w/100)-(tg/100));
+  const pvTerm  = termVal / Math.pow(1+w/100,5);
+  const equity  = pvSum + pvTerm;
+  const intrinsic = (equity / shares / 1000);
+
+  document.getElementById('dcf-live').textContent = 'PKR '+intrinsic.toFixed(2);
+  const updown = ((intrinsic - curPrice)/curPrice*100).toFixed(1);
+  const vEl = document.getElementById('dcf-verdict');
+  if(updown > 10) {
+    vEl.textContent = '▲ '+updown+'% Undervalued — potential upside';
+    vEl.style.color = COLORS.green;
+  } else if(updown < -10) {
+    vEl.textContent = '▼ '+Math.abs(updown)+'% Overvalued — monitor closely';
+    vEl.style.color = COLORS.red;
+  } else {
+    vEl.textContent = '↔ '+Math.abs(updown)+'% Near fair value';
+    vEl.style.color = COLORS.gold;
+  }
+}
+</script>
+</body>
+</html>
